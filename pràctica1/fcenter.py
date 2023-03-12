@@ -1,4 +1,3 @@
-# Import of the needed modules
 from dataclasses import dataclass
 from typing import TextIO
 from collections import deque
@@ -7,26 +6,23 @@ import curses
 import time
 
 
-# Declaration as an int of the type TimeStamp
 TimeStamp = int
 
-# Declaration as an int of the type Identifier
 Identifier = int
 
 
 class Direction(Enum):
-    """
-        Enum that allows to represent a direction left (-1) or right (1) and returns it when initialized.
-    """
+    """Enum that allows to represent a direction left (-1) or right (1)."""
     RIGHT = 1
     LEFT = -1
 
     def __int__(self):
         return self.value
 
+
 @dataclass
 class Package:
-    """Structure to store package data"""
+    """Structure to store package data."""
     identifier: Identifier
     arrival: TimeStamp
     source: int
@@ -36,15 +32,34 @@ class Package:
 
 
 class Station:
-    """Class to create a station where store the packages"""
+    """Class to create a station where the packages are kept and collected."""
     packages: deque[Package]
+    _station_idx: int
 
-    ...
+    def __init__(self, idx: int) -> None:
+        """Constructor of the class Station indexed by the integer idx"""
+        self.packages = deque()
+        self._station_idx = idx
+    
+    def station_idx(self) -> int:
+        """Returns the current station's index"""
+        return self._station_idx
+    
+    def receive_package(self, p: Package) -> None:
+        """
+            Load onto the station a package awaiting to be picked up.
+            The packages are stacked from the left and taken from the right.
+        """
+        self.packages.appendleft(p)
+
+    def send_package(self) -> Package | None:
+        """Sends out the highest priority package if possible."""
+        return self.packages.pop() if len(self.packages) > 0 else None
 
 
 class Wagon:
     """
-        Class for the wagon and its attributes and methods to move, load and deliver.
+        Class for the wagon and its attributes and methods to move and load.
     """
     pos: int
     packages: dict[Identifier, Package]
@@ -52,55 +67,116 @@ class Wagon:
     capacity: int
     current_load: int
 
-    def __init__(self, num_stations: int, capacity: int) -> None: ...
-    """Initializes the wagon given two integers, capacity and station number."""
+    def __init__(self, num_stations: int, capacity: int) -> None:
+        """Initializes the wagon given two integers, capacity and station number."""
+        self.capacity = capacity
+        self.num_stations = num_stations
+        self.pos = 0
+        self.packages = dict()
+        self.current_load = 0
 
-    def move(self, direction: Direction) -> None: ...
-    """
-        Method that moves a wagon a single unit in the given direction by the direction parameter of type Direction.
-    """
+    def move(self, direction: Direction) -> None: 
+        """
+            Method that moves a wagon a single unit in the given direction by the direction parameter of type Direction.
+        """
+        destination = self.pos + direction.value
 
-    def load_package(self, p: Package) -> None: ...
-    """Loads to the wagon the package p."""
-
-    def deliver(self, identifier: Identifier) -> int: ...
-    """
-        It performs the action of delivering the package with the given identifier of type Identifier.
-    """
+        # Moves when no overflowing occurs
+        if 0 <= destination <= self.num_stations - 1:
+            self.pos = destination
+        # First station case
+        elif self.pos == 0:
+            self.pos = self.num_stations - 1 if direction.value == -1 else destination
+        # Last station case
+        elif self.pos == self.num_stations - 1:
+            self.pos = 0 if direction.value == 1 else destination
+        
+    def load_package(self, p: Package) -> None: 
+        """Loads to the wagon the package p."""
+        self.packages[p.identifier] = p
+        self.current_load += p.weight
 
 
 class FullfilmentCenter:
     """Class that manages the fullfilment center."""
-    ...
+    _stations: list[Station]
+    _num_stations: int
+    _wagon: Wagon
+    _cash: int
 
-    def __init__(self, num_stations: int, wagon_capacity: int) -> None: ...
-    """Creates the station given two integers, the number of stations and wagon capacity."""
+    def __init__(self, num_stations: int, wagon_capacity: int) -> None: 
+        """Creates the station given two integers, the number of stations and wagon capacity."""
+        self._num_stations = num_stations 
+        self._stations = list()
+        self._cash = 0
 
-    def cash(self) -> int: ...
-    """Yields the corresponding integer of the invoiced money by the center so far."""
+        #Create the list of stations
+        for i in range(num_stations):
+            self._stations.append(Station(i))
 
-    def wagon(self) -> Wagon: ...
-    """Returns the Wagon object that is being used by the fullfilment center."""
+        #Create the wagon for the station
+        self._wagon = Wagon(num_stations, wagon_capacity)
 
-    def num_stations(self) -> int: ...
-    """Returns the integer of the number of stations of the center. """
+    def cash(self) -> int: 
+        """Yields the corresponding integer of the invoiced money by the center so far."""
+        return self._cash
 
-    def station(self, idx: int) -> Station: ...
-    """
-        Given an index as an integer, it returns the Station object corresponding to the selected station. 
-    """
+    def wagon(self) -> Wagon: 
+        """Returns the Wagon object that is being used by the fullfilment center."""
+        return self._wagon 
 
-    def receive_package(self, p: Package) -> None: ...
-    """Given a package p, it gets loaded into the center."""
+    def num_stations(self) -> int:
+        """Returns the integer of the number of stations of the center. """
+        return self._num_stations
 
-    def deliver_package(self, identifier: Identifier) -> None: ...
-    """Given an identifier, it delivers the labeled package."""
+    def station(self, idx: int) -> Station:
+        """
+            Given an index as an integer, it returns the Station object corresponding to the selected station by the index if possible. 
+        """
+        assert 0 <= idx <= self.num_stations() - 1
+        return self._stations[idx]
 
-    def current_station_package(self) -> Package | None: ...
-    """Returns, if possible, a package from the current station."""
+    def receive_package(self, p: Package) -> None: 
+        """Given a package p, it gets loaded onto the desired station if valid."""
 
-    def load_current_station_package(self) -> None: ...
-    """Loads the current station package."""
+        assert self.station(p.source) 
+        assert 0 <= p.destination <= self.num_stations() - 1
+
+        source_station = self.station(p.source)
+        source_station.receive_package(p)
+         
+    def deliver_package(self, identifier: Identifier) -> None:
+        """Given an identifier, it tries to deliver the indexed package."""
+        wagon = self.wagon()
+        for key in wagon.packages.keys():
+            if key == identifier:
+                if wagon.pos == wagon.packages[key].destination:
+                    wagon.current_load -= wagon.packages[key].weight
+                    self._cash += wagon.packages[key].value
+                    del wagon.packages[key]
+                    return None
+                else:
+                    print("The package can't be delivered here!")
+                    return None
+        print("The package has not been found!")
+
+    def current_station_package(self) -> Package | None: 
+        """Returns, if possible, a package from the current station."""
+        wagon = self.wagon()
+        current_station = self.station(wagon.pos)
+        return current_station.send_package()
+    
+    def load_current_station_package(self) -> None: 
+        """Loads onto the wagon a current station package."""
+        wagon = self.wagon()
+        package = self.current_station_package()
+
+        # Check that the package has been successfully retracted
+        assert package is not None
+        # Check that the package doesn't overflow the wagon's capacity 
+        assert wagon.current_load + package.weight <= wagon.capacity
+
+        wagon.load_package(package)
 
     def write(self, stdscr: curses.window, caption: str = '') -> None:
         """Action that allows to visualize in the terminal the dynamics of the center."""
