@@ -148,17 +148,15 @@ class FullfilmentCenter:
     def deliver_package(self, identifier: Identifier) -> None:
         """Given an identifier, it tries to deliver the indexed package."""
         wagon = self.wagon()
-        for key in wagon.packages.keys():
-            if key == identifier:
-                if wagon.pos == wagon.packages[key].destination:
-                    wagon.current_load -= wagon.packages[key].weight
-                    self._cash += wagon.packages[key].value
-                    del wagon.packages[key]
-                    return None
-                else:
-                    print("The package can't be delivered here!")
-                    return None
-        print("The package has not been found!")
+        if wagon.pos == wagon.packages[identifier].destination:
+            wagon.current_load -= wagon.packages[identifier].weight
+            self._cash += wagon.packages[identifier].value
+            del wagon.packages[identifier]
+
+        elif wagon.pos != wagon.packages[identifier].destination:
+            print("The package can't be delivered here!")
+        else:
+            print("The package has not been found!")
 
     def current_station_package(self) -> Package | None: 
         """Returns, if possible, a package from the current station."""
