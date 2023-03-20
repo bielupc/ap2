@@ -161,13 +161,14 @@ class FullfilmentCenter:
     def current_station_package(self) -> Package | None: 
         """Returns, if possible, a package from the current station."""
         wagon = self.wagon()
-        current_station = self.station(wagon.pos)
-        return current_station.send_package()
+        packages = self.station(wagon.pos).packages
+        return packages[-1]if len(packages) > 0 else None
     
     def load_current_station_package(self) -> None: 
         """Loads onto the wagon a current station package."""
         wagon = self.wagon()
-        package = self.current_station_package()
+        current_station = self.station(wagon.pos)
+        package = current_station.send_package()
 
         # Check that the package has been successfully retracted
         assert package is not None

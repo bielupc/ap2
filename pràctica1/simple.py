@@ -27,13 +27,12 @@ class Strategy:
         return self.center().cash()
 
     def exec(self, packages: list[Package]) -> None:  
-        finished = False
         center = self.center()
         logger = self.logger()
+        f = open("debug.txt", "w")
 
         while True:
-            
-            # We end when the last package arribes
+            # We end when the last package arrives
             if len(packages) == 0: break
             
             # We first deliver the packages to the station
@@ -54,22 +53,19 @@ class Strategy:
                 center.deliver_package(identifier)
                 logger.deliver(self.time(), identifier)
 
-                
 
             # We check for packages to load as long as it's not full
-            # full = False
-            # while not full:
-            #     try:
-            #         center.load_current_station_package()
-            #         logger.load(self.time(), iden)
+            full = False
+            while not full:
+                try:
+                    # The assertions are coded inside the module
+                    p = center.current_station_package()
+                    center.load_current_station_package()
+                    logger.load(self.time(), p.identifier)
+                except:
+                    full = True
 
-            #     except:
-            #         full = True
-           
-
-            
-            
-            # After we're done, we move the wagon 1 unit
+            # When we're done, we move the wagon 1 unit
             center.wagon().move(Direction(1))
             logger.move(self.time(), 1)
 
@@ -103,6 +99,7 @@ def main(stdscr: curses.window) -> None:
     log_path = sys.argv[2]
     num_stations = int(sys.argv[3])
     wagon_capacity = int(sys.argv[4])
+
 
     execute_strategy(packages_path, log_path, num_stations, wagon_capacity)
     check_and_show(packages_path, log_path, stdscr)
