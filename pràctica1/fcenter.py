@@ -32,7 +32,7 @@ class Package:
 
 
 class Station:
-    """Class to create a station where the packages are kept and collected."""
+    """Class to create a station where the packages are kept, collected and delivered."""
     packages: deque[Package]
     _station_idx: int
 
@@ -105,7 +105,7 @@ class FullfilmentCenter:
     _cash: int
 
     def __init__(self, num_stations: int, wagon_capacity: int) -> None: 
-        """Creates the station given two integers, the number of stations and wagon capacity."""
+        """Creates the center given two integers, the number of stations and wagon capacity."""
         self._num_stations = num_stations 
         self._stations = list()
         self._cash = 0
@@ -138,7 +138,6 @@ class FullfilmentCenter:
 
     def receive_package(self, p: Package) -> None: 
         """Given a package p, it gets loaded onto the desired station if valid."""
-
         assert self.station(p.source) 
         assert 0 <= p.destination <= self.num_stations() - 1
 
@@ -154,15 +153,15 @@ class FullfilmentCenter:
             del wagon.packages[identifier]
 
         elif wagon.pos != wagon.packages[identifier].destination:
-            print("The package can't be delivered here!")
+             raise Exception("The package can't be delivered here!")
         else:
-            print("The package has not been found!")
+            raise Exception("The package has not been found!")
 
     def current_station_package(self) -> Package | None: 
         """Returns, if possible, a package from the current station."""
         wagon = self.wagon()
         packages = self.station(wagon.pos).packages
-        return packages[-1]if len(packages) > 0 else None
+        return packages[-1] if len(packages) > 0 else None
     
     def load_current_station_package(self) -> None: 
         """Loads onto the wagon a current station package."""

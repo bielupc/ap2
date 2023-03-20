@@ -5,43 +5,52 @@ from fcenter import *
 
 
 class Strategy:
+    """Class that holds the methods for the logistics of the strategy."""
     _center: FullfilmentCenter
     _time: int
     _logger: Logger    
 
     def __init__(self, num_stations: int, wagon_capacity: int, log_path: str) -> None:
+        """Constructor that builds up the loger and the fcenter objects."""
         self._center = FullfilmentCenter(num_stations, wagon_capacity)
         self._time = 0
         self._logger = Logger(log_path, "simple", num_stations, wagon_capacity)
     
     def center(self) -> FullfilmentCenter:
+        """Returns the fullfullment center object being used for the strategy."""
         return self._center
     
     def logger(self) -> Logger:
+        """Returns the logger object being used by for the strategy."""
         return self._logger
     
     def time(self) -> int:
+        """Returns the current time."""
         return self._time
 
     def cash(self) -> int: 
+        """Yields the corresponding integer of the invoiced money by the center so far."""
         return self.center().cash()
 
     def exec(self, packages: list[Package]) -> None:  
+        """
+            Given a list of packages it executes the strategy that tries to deliver them all.
+        """
+        #Shortcuts
         center = self.center()
         logger = self.logger()
-        f = open("debug.txt", "w")
 
         while True:
-            # We end when the last package arrives
+            # It ends when the last package arrives
             if len(packages) == 0: break
             
-            # We first deliver the packages to the station
+            # Checks for new arrivals 
             if packages[0].arrival == self.time():
                 p = packages.pop(0)
                 center.receive_package(p)
                 logger.add(self.time(), p.identifier)
             
-            # We check for packages to deliver
+            # Lists the deliverable packages
             wagon_packages = center.wagon().packages
             for_delivery: list[int] = list()
             for identifier in wagon_packages.keys():
@@ -49,12 +58,12 @@ class Strategy:
                     for_delivery.append(identifier)
                     print(identifier)
             
+            # It delivers the packages after iterating the dictionary
             for identifier in for_delivery:
                 center.deliver_package(identifier)
                 logger.deliver(self.time(), identifier)
 
-
-            # We check for packages to load as long as it's not full
+            # Loads the packages
             full = False
             while not full:
                 try:
@@ -65,7 +74,7 @@ class Strategy:
                 except:
                     full = True
 
-            # When we're done, we move the wagon 1 unit
+            # When it's done, it moves the wagon 1 unit
             center.wagon().move(Direction(1))
             logger.move(self.time(), 1)
 

@@ -8,3 +8,4 @@
 [X] Modular la entrga de paquets amb dos funcions una al vago, seguir fent la comprovacio al center.
 [X] Packages with missing data
 [X] unique id when loading onto station
+[X] Test 2??
