@@ -9,3 +9,9 @@
 [X] Packages with missing data
 [X] unique id when loading onto station
 [X] Test 2??
+
+Mes valor si al acabar té més diners
+[ ] error linia 127?
+
+[ ] Metode check for arrivals repetit
+[ ] Incrementar temps

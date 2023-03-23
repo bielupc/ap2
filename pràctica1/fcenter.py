@@ -95,6 +95,20 @@ class Wagon:
         """Loads to the wagon the package p."""
         self.packages[p.identifier] = p
         self.current_load += p.weight
+    
+    def send_package(self) -> Identifier | None:
+        """
+            Method that returns, if possible, the id of a deliverable package from the wagon.
+        """
+        if len(self.packages) == 0:
+            return None
+        else:
+            for identifier in self.packages.keys():
+                if self.packages[identifier].destination == self.pos:
+                    return identifier
+            return None
+                    
+
 
 
 class FullfilmentCenter:
@@ -183,7 +197,7 @@ class FullfilmentCenter:
 
         factory_height = 8  # maximum number of rows to write
         wagon_height = 6 # maximum number of rows to write
-        delay = 0.15  # delay after writing the state
+        delay = 0.15 # delay after writing the state
         # start: clear screen
         stdscr.clear()
         # write caption
@@ -236,7 +250,7 @@ class Logger:
         print(t, 'DELIVER', identifier, file=self._file)
 
     def move(self, t: TimeStamp, direction: Direction) -> None:
-        print(t, 'MOVE', direction, file=self._file)
+        print(t, 'MOVE', int(direction), file=self._file)
 
     def add(self, t: TimeStamp, identifier: Identifier) -> None:
         print(t, 'ADD', identifier, file=self._file)

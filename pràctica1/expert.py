@@ -40,33 +40,45 @@ class Strategy:
         center = self.center()
         logger = self.logger()
 
-        for t in range(packages[-1].arrival):
+        while True:
+            # It ends when the last package arrives
+            if len(packages) == 0: break
+            
             # Checks for new arrivals 
-            if packages[0].arrival == t:
+            if packages[0].arrival == self.time():
                 p = packages.pop(0)
                 center.receive_package(p)
-                logger.add(t, p.identifier)
+                logger.add(self.time(), p.identifier)
             
-            # Check for delivery
-            identifier = center.wagon().send_package()
-            if identifier is not None:
+            # Lists the deliverable packages
+            wagon_packages = center.wagon().packages
+            for_delivery: list[int] = list()
+            for identifier in wagon_packages.keys():
+                if wagon_packages[identifier].destination == center.wagon().pos:
+                    for_delivery.append(identifier)
+                    print(identifier)
+            
+            # It delivers the packages after iterating the dictionary
+            for identifier in for_delivery:
                 center.deliver_package(identifier)
-                logger.deliver(t, identifier)
-                continue
-                    
-            # Check for packages to load
-            try:
-                # The assertions are coded inside the module
-                p = center.current_station_package()
-                center.load_current_station_package()
-                logger.load(t, p.identifier)
-                continue 
-            except:
-                pass
-            
-            # If it hasn't skiped the iteration, it moves.
+                logger.deliver(self.time(), identifier)
+
+            # Loads the packages
+            full = False
+            while not full:
+                try:
+                    # The assertions are coded inside the module
+                    p = center.current_station_package()
+                    center.load_current_station_package()
+                    logger.load(self.time(), p.identifier)
+                except:
+                    full = True
+
+            # When it's done, it moves the wagon 1 unit
             center.wagon().move(Direction(1))
-            logger.move(t, 1)
+            logger.move(self.time(), 1)
+
+            self._time += 1
 
 
 def init_curses() -> None:
@@ -75,7 +87,7 @@ def init_curses() -> None:
     curses.curs_set(0)
     curses.start_color()
     curses.use_default_colors()
-    for i in range(0, curses.COLORS - 1):
+    for i in range(0, curses.COLORS):
         curses.init_pair(i + 1, curses.COLOR_WHITE, i)
 
 
