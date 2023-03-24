@@ -11,7 +11,14 @@
 [X] Test 2??
 
 Mes valor si al acabar té més diners
-[ ] error linia 127?
 
 [ ] Metode check for arrivals repetit
-[ ] Incrementar temps
+
+[ ] Distribució de estancions per valor, circular més cap a aquestes
+[ ] Veure quines estacions tenen més valor acumulat
+[ ] Prioritzar paquets relació valor/pes
+
+[ ] No carregar si tens un more valuable packages incoming pel pes.
+
+[ ] Pick and go, select the most valuable and deliver it (optimitzar path)
+[ ] Moure's cap al cantó amb més valor

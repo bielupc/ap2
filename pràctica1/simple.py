@@ -7,13 +7,11 @@ from fcenter import *
 class Strategy:
     """Class that holds the methods for the logistics of the strategy."""
     _center: FullfilmentCenter
-    _time: int
     _logger: Logger    
 
     def __init__(self, num_stations: int, wagon_capacity: int, log_path: str) -> None:
         """Constructor that builds up the loger and the fcenter objects."""
         self._center = FullfilmentCenter(num_stations, wagon_capacity)
-        self._time = 0
         self._logger = Logger(log_path, "simple", num_stations, wagon_capacity)
     
     def center(self) -> FullfilmentCenter:
@@ -23,10 +21,6 @@ class Strategy:
     def logger(self) -> Logger:
         """Returns the logger object being used by for the strategy."""
         return self._logger
-    
-    def time(self) -> int:
-        """Returns the current time."""
-        return self._time
 
     def cash(self) -> int: 
         """Yields the corresponding integer of the invoiced money by the center so far."""
@@ -40,7 +34,14 @@ class Strategy:
         center = self.center()
         logger = self.logger()
 
+        time = []
+        money = []
+
         for t in range(packages[-1].arrival):
+
+            time.append(t)
+            money.append(self.cash())
+
             # Checks for new arrivals 
             if packages[0].arrival == t:
                 p = packages.pop(0)
@@ -48,7 +49,7 @@ class Strategy:
                 logger.add(t, p.identifier)
             
             # Check for delivery
-            identifier = center.wagon().send_package()
+            identifier = center.wagon().unload_package_id()
             if identifier is not None:
                 center.deliver_package(identifier)
                 logger.deliver(t, identifier)
@@ -67,6 +68,11 @@ class Strategy:
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(1))
             logger.move(t, 1)
+        import csv
+        with open('simple.csv', 'w') as f:
+            writer = csv.writer(f)
+            writer.writerows(zip(time, money))  
+
 
 
 def init_curses() -> None:

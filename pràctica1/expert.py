@@ -7,13 +7,11 @@ from fcenter import *
 class Strategy:
     """Class that holds the methods for the logistics of the strategy."""
     _center: FullfilmentCenter
-    _time: int
     _logger: Logger    
 
     def __init__(self, num_stations: int, wagon_capacity: int, log_path: str) -> None:
         """Constructor that builds up the loger and the fcenter objects."""
         self._center = FullfilmentCenter(num_stations, wagon_capacity)
-        self._time = 0
         self._logger = Logger(log_path, "simple", num_stations, wagon_capacity)
     
     def center(self) -> FullfilmentCenter:
@@ -23,14 +21,36 @@ class Strategy:
     def logger(self) -> Logger:
         """Returns the logger object being used by for the strategy."""
         return self._logger
-    
-    def time(self) -> int:
-        """Returns the current time."""
-        return self._time
 
     def cash(self) -> int: 
         """Yields the corresponding integer of the invoiced money by the center so far."""
         return self.center().cash()
+    
+    def optimal_direction(self) -> int:
+        """Returns the most optimal direction to move, based on package value."""
+        right = 0
+        left = 0
+        pos = self.center().wagon().pos
+        num_stations = self.center().num_stations()
+
+        # It iterates through the stations
+        for i in range(0, num_stations):
+            for package in self.center().station(i).packages:
+                if i < pos:
+                    left += package.value
+                elif i > pos:
+                    right += package.value
+        
+        # It iterates through the wagon packages
+        for package in self.center().wagon().packages.values():
+            if package.destination < pos:
+                left += package.value
+            if package.destination > pos:
+                right += package.value
+        
+        return 1 if right >= left else -1
+        
+         
 
     def exec(self, packages: list[Package]) -> None:  
         """
@@ -40,45 +60,49 @@ class Strategy:
         center = self.center()
         logger = self.logger()
 
-        while True:
-            # It ends when the last package arrives
-            if len(packages) == 0: break
-            
+        time = []
+        money = []
+
+
+
+
+        for t in range(packages[-1].arrival):
+
+            time.append(t)
+            money.append(self.cash())
+
             # Checks for new arrivals 
-            if packages[0].arrival == self.time():
+            if packages[0].arrival == t:
                 p = packages.pop(0)
                 center.receive_package(p)
-                logger.add(self.time(), p.identifier)
+                logger.add(t, p.identifier)
             
-            # Lists the deliverable packages
-            wagon_packages = center.wagon().packages
-            for_delivery: list[int] = list()
-            for identifier in wagon_packages.keys():
-                if wagon_packages[identifier].destination == center.wagon().pos:
-                    for_delivery.append(identifier)
-                    print(identifier)
-            
-            # It delivers the packages after iterating the dictionary
-            for identifier in for_delivery:
+            # Check for delivery
+            identifier = center.wagon().unload_package_id()
+            if identifier is not None:
                 center.deliver_package(identifier)
-                logger.deliver(self.time(), identifier)
+                logger.deliver(t, identifier)
+                continue
+                    
+            # Check for packages to load
+            try:
+                # The assertions are coded inside the module
+                p = center.current_station_package()
+                center.load_current_station_package()
+                logger.load(t, p.identifier)
+                continue 
+            except:
+                pass
+            
+            # If it hasn't skiped the iteration, it moves.
+            direction = self.optimal_direction()
+            center.wagon().move(Direction(direction))
+            logger.move(t, direction)
 
-            # Loads the packages
-            full = False
-            while not full:
-                try:
-                    # The assertions are coded inside the module
-                    p = center.current_station_package()
-                    center.load_current_station_package()
-                    logger.load(self.time(), p.identifier)
-                except:
-                    full = True
-
-            # When it's done, it moves the wagon 1 unit
-            center.wagon().move(Direction(1))
-            logger.move(self.time(), 1)
-
-            self._time += 1
+        import csv
+        with open('expert.csv', 'w') as f:
+            writer = csv.writer(f)
+            writer.writerows(zip(time, money))  
 
 
 def init_curses() -> None:
@@ -87,7 +111,7 @@ def init_curses() -> None:
     curses.curs_set(0)
     curses.start_color()
     curses.use_default_colors()
-    for i in range(0, curses.COLORS):
+    for i in range(0, curses.COLORS - 1):
         curses.init_pair(i + 1, curses.COLOR_WHITE, i)
 
 

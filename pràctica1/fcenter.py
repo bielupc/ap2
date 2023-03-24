@@ -96,7 +96,7 @@ class Wagon:
         self.packages[p.identifier] = p
         self.current_load += p.weight
     
-    def send_package(self) -> Identifier | None:
+    def unload_package_id(self) -> Identifier | None:
         """
             Method that returns, if possible, the id of a deliverable package from the wagon.
         """
