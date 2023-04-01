@@ -109,8 +109,6 @@ class Wagon:
             return None
                     
 
-
-
 class FullfilmentCenter:
     """Class that manages the fullfilment center."""
     _stations: list[Station]
@@ -190,6 +188,7 @@ class FullfilmentCenter:
 
         wagon.load_package(package)
 
+
     def write(self, stdscr: curses.window, caption: str = '') -> None:
         """Action that allows to visualize in the terminal the dynamics of the center."""
         def package_color(p: Package) -> int:
@@ -197,7 +196,7 @@ class FullfilmentCenter:
 
         factory_height = 8  # maximum number of rows to write
         wagon_height = 6 # maximum number of rows to write
-        delay = 0.15 # delay after writing the state
+        delay = 0.00000015 # delay after writing the state
         # start: clear screen
         stdscr.clear()
         # write caption

@@ -33,9 +33,13 @@ class Strategy:
         #Shortcuts
         center = self.center()
         logger = self.logger()
-
+        
+        """
+        GRÀFICS
+        """
         time = []
         money = []
+        f = open("debug.txt", "w")
 
         for t in range(packages[-1].arrival):
 
@@ -56,23 +60,20 @@ class Strategy:
                 continue
                     
             # Check for packages to load
-            try:
-                # The assertions are coded inside the module
-                p = center.current_station_package()
+            p = center.current_station_package()
+            if p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity: 
                 center.load_current_station_package()
                 logger.load(t, p.identifier)
                 continue 
-            except:
-                pass
-            
+           
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(1))
             logger.move(t, 1)
+
         import csv
         with open('simple.csv', 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(time, money))  
-
 
 
 def init_curses() -> None:

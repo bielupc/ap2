@@ -10,6 +10,8 @@
 [X] unique id when loading onto station
 [X] Test 2??
 
+[ ] Estacions amb modul numstat
+
 Mes valor si al acabar té més diners
 
 [ ] Metode check for arrivals repetit
@@ -22,3 +24,17 @@ Mes valor si al acabar té més diners
 
 [ ] Pick and go, select the most valuable and deliver it (optimitzar path)
 [ ] Moure's cap al cantó amb més valor
+
+
+highest value package
+fixed
+make sure it can be loaded
+most optimal left or right (time/ packages - load/ money)
+
+paquets que podra recollir i entregar
+
+*deliver target*
+*wagon gestionar load*
+
+pes/valor del load comparat amb els que vindran.
+don't load if we are neraly full and the package won't be delivered in our way to target.
