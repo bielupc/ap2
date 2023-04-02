@@ -196,7 +196,7 @@ class FullfilmentCenter:
 
         factory_height = 8  # maximum number of rows to write
         wagon_height = 6 # maximum number of rows to write
-        delay = 0.00000015 # delay after writing the state
+        delay = 0.15# delay after writing the state
         # start: clear screen
         stdscr.clear()
         # write caption

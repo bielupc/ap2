@@ -12,7 +12,7 @@ class Strategy:
     def __init__(self, num_stations: int, wagon_capacity: int, log_path: str) -> None:
         """Constructor that builds up the loger and the fcenter objects."""
         self._center = FullfilmentCenter(num_stations, wagon_capacity)
-        self._logger = Logger(log_path, "expert", num_stations, wagon_capacity)
+        self._logger = Logger(log_path, "expert2", num_stations, wagon_capacity)
     
     def center(self) -> FullfilmentCenter:
         """Returns the fullfullment center object being used for the strategy."""
@@ -45,7 +45,7 @@ class Strategy:
         return distance, direction
   
     
-    def highest_value_station(self) -> int:
+    def highest_value_package(self) -> tuple[Package, int]:
         """
             Returns the index of the most valuable station based on package value, proximity and unload values.
 
@@ -98,20 +98,19 @@ class Strategy:
         f = open("debug.txt", "w")
 
         fixed = False
-        target = 1
 
         for t in range(packages[-1].arrival):
 
             time.append(t)
             money.append(self.cash())
 
+            if not fixed:
+                p_target, s_target = self.highest_value_package()
+                fixed = True
+                distance, direction = self.optimal_direction(s_target)
+
             # Check if we arrived at fixed station
             if center.wagon().pos == target: fixed = False
-
-            if not fixed:
-                target = self.highest_value_station()
-                fixed = True
-                distance, direction = self.optimal_direction(target)
 
             # Checks for new arrivals 
             if packages[0].arrival == t:
@@ -145,7 +144,7 @@ class Strategy:
             logger.move(t, direction)
 
         import csv
-        with open('expert.csv', 'w') as f:
+        with open('expert2.csv', 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(time, money))  
 

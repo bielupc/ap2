@@ -12,7 +12,7 @@ class Strategy:
     def __init__(self, num_stations: int, wagon_capacity: int, log_path: str) -> None:
         """Constructor that builds up the loger and the fcenter objects."""
         self._center = FullfilmentCenter(num_stations, wagon_capacity)
-        self._logger = Logger(log_path, "expert", num_stations, wagon_capacity)
+        self._logger = Logger(log_path, "simple", num_stations, wagon_capacity)
     
     def center(self) -> FullfilmentCenter:
         """Returns the fullfullment center object being used for the strategy."""
@@ -26,7 +26,7 @@ class Strategy:
         """Yields the corresponding integer of the invoiced money by the center so far."""
         return self.center().cash()
     
-    def optimal_direction(self, target: int) -> tuple[int, int]:
+    def get_optimal_direction(self, target: int) -> int:
         """
             Returns a tuple (distance, direction) to indicate the shortest distance from wagon position to target and the direction it should move.
         """
@@ -35,66 +35,49 @@ class Strategy:
 
         inner_distance = (wagon_pos - target) % self.center().num_stations()
         outer_distance = (target - wagon_pos) % self.center().num_stations()
-        distance = min(inner_distance, outer_distance)
 
         if target < wagon_pos:
             direction = 1 if outer_distance >= inner_distance else -1
         else:
             direction = 1 if outer_distance <= inner_distance else -1
         
-        return distance, direction
-  
+        return direction
     
-    def highest_value_station(self) -> int:
-        """
-            Returns the index of the most valuable station based on package value, proximity and unload values.
-
-            Score(Si) = (0.6*VAL) + (0.3*(STATIONS - DIST)) + (0.1*UNLOADS)
-        """
+    def get_optimal_path(self) -> int:
 
         scores = {idx: 0 for idx in range(self.center().num_stations())}
 
         
         for target in range(self.center().num_stations()):
             value = 0
-            distance: int
-            unloads_val = 0
-            direction: int 
-            front: str
             weight = 0
 
-            distance, direction = self.optimal_direction(target)
-
-            # Accumulated value
             for package in self.center().station(target).packages:
                 value += package.value
                 weight += package.weight
-
-            # Possible unloads
-            wagon_pos = self.center().wagon().pos
-            for package in self.center().wagon().packages.values():
-                if check_if_deliverable(direction, wagon_pos, package.destination, target):
-                    unloads_val += 1
-
-            scores[target] = 0.5*value + 0.1*(self.center().num_stations() - distance) + 0.1*unloads_val - 0.3*(weight)
+                
+            if weight == 0:
+                scores[target] = 0
+            else:
+                scores[target] = value/weight
 
         return max(scores, key=scores.get)
 
 
 
-        
     def exec(self, packages: list[Package]) -> None:  
         """
             Given a list of packages it executes the strategy that tries to deliver them all.
         """
-
         #Shortcuts
         center = self.center()
         logger = self.logger()
-
+        
+        """
+        GRÀFICS
+        """
         time = []
         money = []
-
         f = open("debug.txt", "w")
 
         fixed = False
@@ -102,16 +85,19 @@ class Strategy:
 
         for t in range(packages[-1].arrival):
 
-            time.append(t)
-            money.append(self.cash())
-
-            # Check if we arrived at fixed station
-            if center.wagon().pos == target: fixed = False
+            if self.center().wagon().pos == target:
+                fixed = False
 
             if not fixed:
-                target = self.highest_value_station()
                 fixed = True
-                distance, direction = self.optimal_direction(target)
+                target = self.get_optimal_path()
+                direction = self.get_optimal_direction(target)
+
+                f.write(str(target))
+            
+
+            time.append(t)
+            money.append(self.cash())
 
             # Checks for new arrivals 
             if packages[0].arrival == t:
@@ -129,43 +115,20 @@ class Strategy:
             # Check for packages to load
             p = center.current_station_package()
             if p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity: 
-                if center.wagon().current_load >= center.wagon().capacity * 3/4:
-                    if check_if_deliverable(direction, self.center().wagon().pos, p.destination, target):
-                        center.load_current_station_package()
-                        logger.load(t, p.identifier)
-                        continue 
-                else:
-                    center.load_current_station_package()
-                    logger.load(t, p.identifier)
-                    continue 
-
-
+                center.load_current_station_package()
+                logger.load(t, p.identifier)
+                continue 
+           
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(direction))
             logger.move(t, direction)
 
         import csv
-        with open('expert.csv', 'w') as f:
+        with open('simple2.csv', 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(time, money))  
 
-def check_if_deliverable(direction: int, wagon_pos: int, destination: int, target: int) -> bool:
-    """
-    Given a direction, wagon pos, target and package destination, it returns weather the package
-    will be deliverable on the way to the target station.
-    """
-    if direction == 1 and ((wagon_pos <= destination <= target) or
-    (destination <= target < wagon_pos) or 
-    (target < wagon_pos < destination)):
-       return True
 
-    elif direction == -1 and ((target <= destination <= wagon_pos) or 
-    (destination >= wagon_pos > target) or 
-    (wagon_pos > target > destination)):
-        return True 
-    
-    else: return False
-    
 def init_curses() -> None:
     """Initializes the curses library to get fancy colors and whatnots."""
 
