@@ -44,44 +44,52 @@ class Strategy:
         
         return distance, direction
   
+    def highest_delivery_station(self) -> int:
+        """
+            Returns the direction to take in order to deliver the most amount of valuable packages in one full circular motion.
+        """
+
+        left = 0
+        right = 0
+        
+        wagon_pos = self.center().wagon().pos
+        for package in self.center().wagon().packages.values():
+            if check_if_deliverable(1, wagon_pos, package.destination, wagon_pos):
+                right += 1
+            elif check_if_deliverable(-1, wagon_pos, package.destination, wagon_pos):
+                left += 1
+        return 1 if right >= left else -1
     
     def highest_value_station(self) -> int:
         """
             Returns the index of the most valuable station based on package value, proximity and unload values.
 
-            Score(Si) = (0.6*VAL) + (0.3*(STATIONS - DIST)) + (0.1*UNLOADS)
+            Score(Si) = 0.5*VAL + 0.1*(STATIONS - DIST) + 0.1*UNLOADS - 0.3*WEIGHTS
         """
 
         scores = {idx: 0 for idx in range(self.center().num_stations())}
-
         
         for target in range(self.center().num_stations()):
             value = 0
-            distance: int
-            unloads_val = 0
-            direction: int 
-            front: str
             weight = 0
+            unloads= 0
 
             distance, direction = self.optimal_direction(target)
 
-            # Accumulated value
-            for package in self.center().station(target).packages:
-                value += package.value
-                weight += package.weight
+            # Accumulated value and weight penaty.
+            for p in self.center().station(target).packages:
+                value += p.value
+                weight += p.weight
 
             # Possible unloads
             wagon_pos = self.center().wagon().pos
             for package in self.center().wagon().packages.values():
                 if check_if_deliverable(direction, wagon_pos, package.destination, target):
-                    unloads_val += 1
+                    unloads += 1
 
-            scores[target] = 0.5*value + 0.1*(self.center().num_stations() - distance) + 0.1*unloads_val - 0.3*(weight)
+            scores[target] = 0.5*value + 0.1*(self.center().num_stations() - distance) + 0.1*unloads - 0.3*(weight)
 
         return max(scores, key=scores.get)
-
-
-
         
     def exec(self, packages: list[Package]) -> None:  
         """
@@ -92,27 +100,12 @@ class Strategy:
         center = self.center()
         logger = self.logger()
 
-        time = []
-        money = []
-
-        f = open("debug.txt", "w")
-
         fixed = False
+        deliver_mode = False
+        load_mode = True
         target = 1
 
         for t in range(packages[-1].arrival):
-
-            time.append(t)
-            money.append(self.cash())
-
-            # Check if we arrived at fixed station
-            if center.wagon().pos == target: fixed = False
-
-            if not fixed:
-                target = self.highest_value_station()
-                fixed = True
-                distance, direction = self.optimal_direction(target)
-
             # Checks for new arrivals 
             if packages[0].arrival == t:
                 p = packages.pop(0)
@@ -124,36 +117,71 @@ class Strategy:
             if identifier is not None:
                 center.deliver_package(identifier)
                 logger.deliver(t, identifier)
-                continue
+                continue # It jumps to the next timestamp
+
+            # Check if we arrived at goal station
+            if center.wagon().pos == target: fixed = False
+
+            if not fixed:
+                # Set deliver mode
+                if self.center().wagon().current_load > 0:
+                    deliver_mode = True
+                    load_mode = False
+                    direction = self.highest_delivery_station()
+                    fixed = True
+                    target = center.wagon().pos
+                # Set load mode
+                else:
+                    deliver_mode = False
+                    load_mode = True
+                    target = self.highest_value_station()
+                    fixed = True
+                    distance, direction = self.optimal_direction(target)
                     
-            # Check for packages to load
-            p = center.current_station_package()
-            if p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity: 
-                if center.wagon().current_load >= center.wagon().capacity * 3/4:
-                    if check_if_deliverable(direction, self.center().wagon().pos, p.destination, target):
+            # Check for packages to load in both modes 
+            if load_mode:
+                p = center.current_station_package()
+
+                # The package exist, and fits in
+                if p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity: 
+                    # Lots of capacity left scenario
+                    if center.wagon().current_load <= 0.8*center.wagon().capacity:
                         center.load_current_station_package()
                         logger.load(t, p.identifier)
                         continue 
-                else:
+                    # Deliverable on the way to target scenario
+                    elif check_if_deliverable(direction, center.wagon().pos, p.destination, target):
+                        center.load_current_station_package()
+                        logger.load(t, p.identifier)
+                        continue 
+                    # Very valuable package scenario
+                    elif p.value >= center.station(target).packages[-1].value:
+                        center.load_current_station_package()
+                        logger.load(t, p.identifier)
+                        continue 
+
+            elif deliver_mode:
+                p = center.current_station_package()
+                if (p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity) and center.wagon().current_load <= 0.8*center.wagon().capacity:
                     center.load_current_station_package()
                     logger.load(t, p.identifier)
                     continue 
-
+                elif (p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity) and (check_if_deliverable(direction, center.wagon().pos, p.destination, target)): 
+                    center.load_current_station_package()
+                    logger.load(t, p.identifier)
+                    continue 
 
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(direction))
             logger.move(t, direction)
 
-        import csv
-        with open('expert.csv', 'w') as f:
-            writer = csv.writer(f)
-            writer.writerows(zip(time, money))  
 
 def check_if_deliverable(direction: int, wagon_pos: int, destination: int, target: int) -> bool:
     """
-    Given a direction, wagon pos, target and package destination, it returns weather the package
-    will be deliverable on the way to the target station.
+        Given a direction, wagon pos, target and package destination, it returns weather the package
+        will be deliverable on the way to the target station.
     """
+
     if direction == 1 and ((wagon_pos <= destination <= target) or
     (destination <= target < wagon_pos) or 
     (target < wagon_pos < destination)):
@@ -166,6 +194,7 @@ def check_if_deliverable(direction: int, wagon_pos: int, destination: int, targe
     
     else: return False
     
+
 def init_curses() -> None:
     """Initializes the curses library to get fancy colors and whatnots."""
 

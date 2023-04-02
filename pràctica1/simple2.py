@@ -25,8 +25,8 @@ class Strategy:
     def cash(self) -> int: 
         """Yields the corresponding integer of the invoiced money by the center so far."""
         return self.center().cash()
-    
-    def get_optimal_direction(self, target: int) -> int:
+
+    def get_optimal_direction(self, target: int) -> tuple[int, int]:
         """
             Returns a tuple (distance, direction) to indicate the shortest distance from wagon position to target and the direction it should move.
         """
@@ -35,13 +35,14 @@ class Strategy:
 
         inner_distance = (wagon_pos - target) % self.center().num_stations()
         outer_distance = (target - wagon_pos) % self.center().num_stations()
+        distance = min(inner_distance, outer_distance)
 
         if target < wagon_pos:
             direction = 1 if outer_distance >= inner_distance else -1
         else:
             direction = 1 if outer_distance <= inner_distance else -1
         
-        return direction
+        return distance, direction   
     
     def get_optimal_path(self) -> int:
 
@@ -55,6 +56,8 @@ class Strategy:
             for package in self.center().station(target).packages:
                 value += package.value
                 weight += package.weight
+                distance, direction = self.get_optimal_direction(target)
+                n += 1
                 
             if weight == 0:
                 scores[target] = 0
@@ -78,23 +81,13 @@ class Strategy:
         """
         time = []
         money = []
+        fulls = 0
         f = open("debug.txt", "w")
 
         fixed = False
         target = 1
 
         for t in range(packages[-1].arrival):
-
-            if self.center().wagon().pos == target:
-                fixed = False
-
-            if not fixed:
-                fixed = True
-                target = self.get_optimal_path()
-                direction = self.get_optimal_direction(target)
-
-                f.write(str(target))
-            
 
             time.append(t)
             money.append(self.cash())
@@ -111,13 +104,32 @@ class Strategy:
                 center.deliver_package(identifier)
                 logger.deliver(t, identifier)
                 continue
-                    
+    
+
+            if self.center().wagon().pos == target:
+                fixed = False
+
+            if not fixed:
+                fixed = True
+                target = self.get_optimal_path()
+                distance, direction = self.get_optimal_direction(target)
+
+                   
             # Check for packages to load
             p = center.current_station_package()
             if p is not None and p.weight + center.wagon().current_load <= center.wagon().capacity: 
-                center.load_current_station_package()
-                logger.load(t, p.identifier)
-                continue 
+                if center.wagon().current_load >= center.wagon().capacity * 3/4:
+                    if check_if_deliverable(direction, self.center().wagon().pos, p.destination, target):
+                        center.load_current_station_package()
+                        logger.load(t, p.identifier)
+                        continue 
+                    continue 
+                else:
+                    center.load_current_station_package()
+                    logger.load(t, p.identifier)
+                    continue 
+            else:
+                fulls += 1
            
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(direction))
@@ -127,6 +139,8 @@ class Strategy:
         with open('simple2.csv', 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(time, money))  
+        f = open("debug.txt", "w")   
+        f.write(str(fulls))
 
 
 def init_curses() -> None:

@@ -12,14 +12,14 @@ class Strategy:
     def __init__(self, num_stations: int, wagon_capacity: int, log_path: str) -> None:
         """Constructor that builds up the loger and the fcenter objects."""
         self._center = FullfilmentCenter(num_stations, wagon_capacity)
-        self._logger = Logger(log_path, "simple", num_stations, wagon_capacity)
+        self._logger = Logger(log_path, "expert", num_stations, wagon_capacity)
     
     def center(self) -> FullfilmentCenter:
         """Returns the fullfullment center object being used for the strategy."""
         return self._center
     
     def logger(self) -> Logger:
-        """Returns the logger object being used by for the strategy."""
+        """Returns the logger object being used by the strategy."""
         return self._logger
 
     def cash(self) -> int: 
@@ -30,23 +30,13 @@ class Strategy:
         """
             Given a list of packages it executes the strategy that tries to deliver them all.
         """
+
         #Shortcuts
         center = self.center()
         logger = self.logger()
-        
-        """
-        GRÀFICS
-        """
-        time = []
-        money = []
-        f = open("debug.txt", "w")
 
         for t in range(packages[-1].arrival):
-
-            time.append(t)
-            money.append(self.cash())
-
-            # Checks for new arrivals 
+            # Check for new arrivals 
             if packages[0].arrival == t:
                 p = packages.pop(0)
                 center.receive_package(p)
@@ -57,7 +47,7 @@ class Strategy:
             if identifier is not None:
                 center.deliver_package(identifier)
                 logger.deliver(t, identifier)
-                continue
+                continue # it jumps to the next timestamp
                     
             # Check for packages to load
             p = center.current_station_package()
@@ -65,17 +55,12 @@ class Strategy:
                 center.load_current_station_package()
                 logger.load(t, p.identifier)
                 continue 
-           
+
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(1))
             logger.move(t, 1)
 
-        import csv
-        with open('simple.csv', 'w') as f:
-            writer = csv.writer(f)
-            writer.writerows(zip(time, money))  
-
-
+      
 def init_curses() -> None:
     """Initializes the curses library to get fancy colors and whatnots."""
 

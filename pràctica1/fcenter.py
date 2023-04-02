@@ -122,11 +122,9 @@ class FullfilmentCenter:
         self._stations = list()
         self._cash = 0
 
-        #Create the list of stations
         for i in range(num_stations):
             self._stations.append(Station(i))
 
-        #Create the wagon for the station
         self._wagon = Wagon(num_stations, wagon_capacity)
 
     def cash(self) -> int: 
@@ -158,6 +156,7 @@ class FullfilmentCenter:
          
     def deliver_package(self, identifier: Identifier) -> None:
         """Given an identifier, it tries to deliver the indexed package."""
+
         wagon = self.wagon()
         if wagon.pos == wagon.packages[identifier].destination:
             wagon.current_load -= wagon.packages[identifier].weight
@@ -171,12 +170,14 @@ class FullfilmentCenter:
 
     def current_station_package(self) -> Package | None: 
         """Returns, if possible, a package from the current station."""
+
         wagon = self.wagon()
         packages = self.station(wagon.pos).packages
         return packages[-1] if len(packages) > 0 else None
     
     def load_current_station_package(self) -> None: 
         """Loads onto the wagon a current station package."""
+        
         wagon = self.wagon()
         current_station = self.station(wagon.pos)
         package = current_station.send_package()
@@ -196,7 +197,7 @@ class FullfilmentCenter:
 
         factory_height = 8  # maximum number of rows to write
         wagon_height = 6 # maximum number of rows to write
-        delay = 0.15# delay after writing the state
+        delay = 0.0000015# delay after writing the state
         # start: clear screen
         stdscr.clear()
         # write caption
