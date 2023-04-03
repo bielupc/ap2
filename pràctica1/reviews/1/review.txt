@@ -1,0 +1,46 @@
+13
+
+Les classes i estructures no tenen una documentació que expliqui el que fan de manera general. No obstant, tots els mètodes estan ben documentats de manera clara, concisa, completa, coherent i uniforme. A més, les precondicions i paràmetres necessaris queden també clars.
+
+3
+
+4
+
+El codi es pot entendre fàcilment, està ben estructurat i és llegible. A més, no hi ha duplicats i els fa un bon ús de totes les funcions i mètodes. Els bugs que he detectat són els següents:
+
+La funció move del Wagon, no pot desplaçar-lo a l'esquerra.
+El constructor del fcenter crea una estació de més.
+
+Són bugs poc rellevants malgrat que faran que l'estratègia no funcioni bé.
+
+3
+
+No
+
+Altre cop, no es troba documentació del que fan les classes, però els mètodes estan explicats amb els seus respectius docstrings que deixen molt clar que fa cada funció. Tot està ben redactat i és clar i concís. A diferència del fcenter, ara sí que calen explicacions addicionals de parts del codi que també queden molt ben documentades amb comentaris.
+
+3
+
+L'únic bug que s'ha trobat era l'assignació errònia del atribut direction, que no es feia emprant la classe Direction correctament. Altrament, la visualització no era possible, ja que el nom del logger incloïa un espai que en processar-ho, es detectava com a un argument extra.
+
+Solucionat això, la implementació funciona correctament, el codi és fàcil d'entendre a nivell general, s'utilitzen totes les classes i mètodes de manera harmònica utilitzant les anotacions de tipus correctament. El codi és molt seqüencial i fa que tot i que algun mètode no estigui implementat de la forma més intuïtiva, es pugui interpretar fàcilment.
+
+Com a millores, la funció list_packages_delivery no tindria per què retornar una llista, ja que només utilitzarem el primer element i cridarem el mètode repetidament a cada iteració del bucle per buscar paquets per entregar. Només caldria retornar un sol paquet. Per últim, la manera de gestionar el temps podria ser millorada, ja que en sumar 1 al temps, per exemple en el primer bloc (per comprovar entregues de paquets) no ens assegurem que no estiguem sobrepassant el temps fins a una iteració sencera després, llavors podríem estar entregant paquets fora de temps. Per solucionar això ràpidament, es pot fer la comprovació cada cop que incrementem el temps. Tot i no ser la millor manera, funciona correctament.
+
+3
+
+No s'ha implementat
+
+0
+
+51981
+
+----
+
+0
+
+0
+
+3
+
+En termes del fcenter, el meu mòdul és semblant i tot i canviar una mica la manera d'escriure algunes coses i incloure algun assert per fer algun double check. En canvi, en el simple.py es troba la principal diferència, ja que jo he fet un for loop per anar iterant la variable temps fins a arribar a t == arribada de l'últim paquet. En canvi, en aquesta submission es fa un while loop i es va augmentant el temps a cada operació que ho ha de fer. En aquest cas, tot i funcionar, la implementació és una mica més embolicada, ja que cal anar fent comprovacions i repetir parts del codi.
