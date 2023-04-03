@@ -79,8 +79,9 @@ class Strategy:
 
             #packages the wagon can pick up from the station
             while _first_package_in_station is not None and (_first_package_in_station.weight + self._fullfilmentCenter.wagon().current_load < self._fullfilmentCenter.wagon().capacity):
-                self._fullfilmentCenter.load_current_station_package()
+                
                 self._logger.load(self._time, _first_package_in_station.identifier)
+                self._fullfilmentCenter.load_current_station_package()
                 self._time += 1
                 if len(packages) == 0 or self._time == packages[-1].arrival: break
                 self.package_to_source_station(packages)
