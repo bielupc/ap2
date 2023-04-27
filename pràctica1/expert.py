@@ -95,7 +95,7 @@ class Strategy:
         """
             Given a list of packages it executes the strategy that tries to deliver them all.
         """
-
+        
         #Shortcuts
         center = self.center()
         logger = self.logger()
@@ -174,6 +174,7 @@ class Strategy:
             # If it hasn't skiped the iteration, it moves.
             center.wagon().move(Direction(direction))
             logger.move(t, direction)
+
 
 
 def check_if_deliverable(direction: int, wagon_pos: int, destination: int, target: int) -> bool:
